@@ -40,4 +40,16 @@ def parse_sde():
             sentence = ''
             column = 1
 
+    with open('mapSolarSystemJumps_parsed', 'w') as f:
+        for from_, to_list in jumps.items():
+            f.write(from_)
+            f.write(str(to_list.__len__()))
+            if to_list.__len__() > 9:
+                print 'ERRORRRR'
+            for to_ in to_list:
+                f.write(to_)
+            f.write('\n')
+
     return jumps
+
+parse_sde()

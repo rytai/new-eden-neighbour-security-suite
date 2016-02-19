@@ -5,7 +5,6 @@ import urllib2
 import urllib
 
 import pycrest  # Api to connect to Crest
-import parse_sde
 
 import requests
 import json  # For parsing the received crest data.
@@ -47,7 +46,54 @@ def get_solar_system_by_id(eve, id):
     return getByAttrVal(eve.systems().items, 'id', int(id))
 
 
+class JumpData:
+    filename = None
+    jumps = None
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.jumps = {}
+
+        self.parse()
+
+    def parse(self):
+        with open('jumps_data', 'r') as file:
+            # Read the file one row at a time.
+            for line in file.readlines():
+                self.parse_line(line)
+
+        print "Parsing jumps file succesfull."
+
+    def parse_line(self, line):
+        # Get the from solar system -id.
+        from_id = line[0:8]
+
+        # Get the number of jumps from this id.
+        number_of_jumps = int(line[8])
+        self.parse_jumps(from_id, number_of_jumps, line)
+
+    def parse_jumps(self, from_id, number_of_jumps, line):
+        # Parse each jump-
+        for i in range(0, number_of_jumps):
+            # First destination id starts from 10th character
+            position = 9 + (i*8)
+            to_id = line[position:position+8]
+            try:
+                self.jumps[from_id].append(to_id)
+            except KeyError:
+                self.jumps[from_id] = [to_id]
+
+    @property
+    def get_jump_dict(self):
+        return self.jumps
+
+
+
+
+
 def main():
+    jump_data = JumpData('jumps_data')
+
     eve = pycrest.EVE()
     eve()
 
@@ -55,7 +101,7 @@ def main():
     jita_id = getByAttrVal(eve.systems().items, 'name', 'Jita').id
 
     # Get dict from parser containing all the possible jumps between systems.
-    jumps_dictionary = parse_sde.parse_sde()  # Jita neighbours
+    jumps_dictionary = jump_data.get_jump_dict  # Jita
 
     immediate_neighbours_ids = find_solar_system_neighbours(jumps_dictionary, str(jita_id))
 
@@ -78,7 +124,6 @@ def main():
     for one_jump_neighbour_id in two_jump_neighbour_ids:
         new_system = get_solar_system_by_id(eve, one_jump_neighbour_id)
         one_jump_neighbours.append(new_system)
-
 
     print "Jita neighbours:--------------------------------------------"
     for system in immediate_neighbours:
