@@ -51,38 +51,34 @@ def main():
     eve = pycrest.EVE()
     eve()
 
-    print 'Jita by name' + str(getByAttrVal(eve.systems().items, 'name', 'Jita'))
+    # Get jita ID.
+    jita_id = getByAttrVal(eve.systems().items, 'name', 'Jita').id
 
-    jita = getByAttrVal(eve.systems().items, 'id', 30000142)
-
-    #  print 'Jita info:'
-    for line in str(jita()).split(','):
-        #print line
-        pass
-
-    # Get dict containing all the possible jumps between systems.
+    # Get dict from parser containing all the possible jumps between systems.
     jumps_dictionary = parse_sde.parse_sde()  # Jita neighbours
 
-    immediate_neighbours_ids = find_solar_system_neighbours(jumps_dictionary, '30000142')
-    immediate_neighbours = []
-
-    for solar_system_id in immediate_neighbours_ids:
-        new_system = get_solar_system_by_id(eve, solar_system_id)
-        immediate_neighbours.append(new_system)
+    immediate_neighbours_ids = find_solar_system_neighbours(jumps_dictionary, str(jita_id))
 
     # Get ID's from one jump away. no duplicates
-    one_jump_neighbour_ids = []
-    for neighbour_id in immediate_neighbours_ids:
-        for one_jump_neighbour_id in find_solar_system_neighbours(jumps_dictionary, neighbour_id):
+    two_jump_neighbour_ids = []
+    for _id in immediate_neighbours_ids:
+        for one_jump_neighbour_id in find_solar_system_neighbours(jumps_dictionary, _id):
             if one_jump_neighbour_id not in immediate_neighbours_ids:
-                if one_jump_neighbour_id not in one_jump_neighbour_ids:
-                    one_jump_neighbour_ids.append(one_jump_neighbour_id)
+                if one_jump_neighbour_id not in two_jump_neighbour_ids:
+                    two_jump_neighbour_ids.append(one_jump_neighbour_id)
 
-    # Get system names from the id's
+    immediate_neighbours = []
+    # Get CREST data from the neighbouring system.
+    for _id in immediate_neighbours_ids:
+        new_system = get_solar_system_by_id(eve, _id)
+        immediate_neighbours.append(new_system)
+
+    # Get CREST data from all the systems 2 jumps away.
     one_jump_neighbours = []
-    for one_jump_neighbour_id in one_jump_neighbour_ids:
+    for one_jump_neighbour_id in two_jump_neighbour_ids:
         new_system = get_solar_system_by_id(eve, one_jump_neighbour_id)
         one_jump_neighbours.append(new_system)
+
 
     print "Jita neighbours:--------------------------------------------"
     for system in immediate_neighbours:
